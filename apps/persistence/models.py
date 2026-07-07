@@ -59,6 +59,7 @@ class MediaAsset(Base):
     tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
     collection_id: Mapped[str] = mapped_column(ForeignKey("collections.id"), index=True)
     source_uri: Mapped[str]
+    source_type: Mapped[str] = mapped_column(default="object")
     processing_state: Mapped[ProcessingState] = mapped_column(
         Enum(ProcessingState),
         default=ProcessingState.PENDING,
@@ -110,6 +111,7 @@ class Index(Base):
     name: Mapped[str]
     version: Mapped[str]
     modality: Mapped[str]
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=now_utc)
 
     temporal_records: Mapped[list["TemporalRecord"]] = relationship(

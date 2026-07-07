@@ -1,10 +1,5 @@
-from collections.abc import Iterator
+from sqlalchemy.orm import Session
 
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-
-from apps.persistence.migrations import run_migrations
 from apps.persistence.models import (
     Collection,
     Index,
@@ -26,15 +21,6 @@ from apps.persistence.repositories import (
     TenantRepository,
     VirtualClipRepository,
 )
-
-
-@pytest.fixture
-def session() -> Iterator[Session]:
-    engine = create_engine("sqlite:///:memory:")
-    run_migrations(engine)
-    session_factory = sessionmaker(bind=engine, expire_on_commit=False)
-    with session_factory() as session:
-        yield session
 
 
 def test_collection_repository_queries_exclude_other_tenant_rows(
