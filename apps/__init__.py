@@ -1,0 +1,1 @@
+"""VideoDB applications."""
