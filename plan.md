@@ -505,55 +505,55 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ### Asset ingestion
 
-- [ ] Add the create-collection endpoint.
-- [ ] Add the list-collections endpoint.
-- [ ] Add the create-asset endpoint.
-- [ ] Add the get-asset endpoint.
-- [ ] Add the asset-status endpoint.
-- [ ] Add the presigned multipart-upload endpoint.
-- [ ] Add the upload-completion endpoint.
-- [ ] Add idempotency-key handling to asset mutations.
-- [ ] Add source-object validation.
-- [ ] Add URL import as a separate ingestion source.
+- [x] Add the create-collection endpoint.
+- [x] Add the list-collections endpoint.
+- [x] Add the create-asset endpoint.
+- [x] Add the get-asset endpoint.
+- [x] Add the asset-status endpoint.
+- [x] Add the presigned multipart-upload endpoint.
+- [x] Add the upload-completion endpoint.
+- [x] Add idempotency-key handling to asset mutations.
+- [x] Add source-object validation.
+- [x] Add URL import as a separate ingestion source.
 
 ### Media normalization
 
-- [ ] Add an `ffprobe` adapter.
-- [ ] Persist probed media metadata.
-- [ ] Add the Temporal asset-ingestion workflow.
-- [ ] Add an activity to extract audio.
-- [ ] Add an activity to create a proxy rendition.
-- [ ] Add an activity to generate CMAF/HLS fragments.
-- [ ] Add an activity to generate thumbnails.
-- [ ] Persist segment timestamp mappings.
-- [ ] Make every media activity idempotent.
-- [ ] Test workflow recovery after an activity retry.
-- [ ] Verify generated HLS playback and seeking.
+- [x] Add an `ffprobe` adapter.
+- [x] Persist probed media metadata.
+- [x] Add the Temporal asset-ingestion workflow.
+- [x] Add an activity to extract audio.
+- [x] Add an activity to create a proxy rendition.
+- [x] Add an activity to generate CMAF/HLS fragments.
+- [x] Add an activity to generate thumbnails.
+- [x] Persist segment timestamp mappings.
+- [x] Make every media activity idempotent.
+- [x] Test workflow recovery after an activity retry.
+- [x] Verify generated HLS playback and seeking.
 
 ### Transcript index
 
-- [ ] Define the ASR provider interface.
-- [ ] Add one ASR provider implementation.
-- [ ] Persist transcript utterances as temporal records.
-- [ ] Persist transcript embeddings.
-- [ ] Add transcript index version metadata.
-- [ ] Add transcript vector search.
-- [ ] Add transcript full-text search.
-- [ ] Return transcript timestamps and evidence text.
-- [ ] Test rebuilding a transcript index with a new version.
+- [x] Define the ASR provider interface.
+- [x] Add one ASR provider implementation.
+- [x] Persist transcript utterances as temporal records.
+- [x] Persist transcript embeddings.
+- [x] Add transcript index version metadata.
+- [x] Add transcript vector search.
+- [x] Add transcript full-text search.
+- [x] Return transcript timestamps and evidence text.
+- [x] Test rebuilding a transcript index with a new version.
 
 ### Visual index
 
-- [ ] Define the visual-model provider interface.
-- [ ] Add shot-boundary extraction.
-- [ ] Add representative-frame extraction.
-- [ ] Add one visual-model provider implementation.
-- [ ] Persist visual descriptions as temporal records.
-- [ ] Persist visual embeddings.
-- [ ] Add visual index version metadata.
-- [ ] Add visual vector search.
-- [ ] Return visual timestamps and source-frame references.
-- [ ] Test `PARTIALLY_READY` when one index branch fails.
+- [x] Define the visual-model provider interface.
+- [x] Add shot-boundary extraction.
+- [x] Add representative-frame extraction.
+- [x] Add one visual-model provider implementation.
+- [x] Persist visual descriptions as temporal records.
+- [x] Persist visual embeddings.
+- [x] Add visual index version metadata.
+- [x] Add visual vector search.
+- [x] Return visual timestamps and source-frame references.
+- [x] Test `PARTIALLY_READY` when one index branch fails.
 
 ### Hybrid search
 
