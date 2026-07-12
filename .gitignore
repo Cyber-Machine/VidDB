@@ -1,5 +1,8 @@
 .pytest_cache/
 .ruff_cache/
 .venv/
+.DS_Store
+explaination.html
+explanation.html
 __pycache__/
 *.py[cod]

@@ -87,18 +87,18 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ## Hybrid search
 
-- [ ] Add the search request schema.
-- [ ] Add tenant and collection filters.
-- [ ] Add asset and time-range filters.
-- [ ] Add modality and index-version filters.
-- [ ] Retrieve vector and full-text candidates in parallel.
-- [ ] Normalize candidate scores.
-- [ ] Apply the configured score weights.
-- [ ] Merge overlapping temporal results.
-- [ ] Apply configurable pre-roll and post-roll.
-- [ ] Add cursor-based pagination.
-- [ ] Add the search endpoint.
-- [ ] Benchmark warm search p95.
+- [x] Add the search request schema.
+- [x] Add tenant and collection filters.
+- [x] Add asset and time-range filters.
+- [x] Add modality and index-version filters.
+- [x] Retrieve vector and full-text candidates in parallel.
+- [x] Normalize candidate scores.
+- [x] Apply the configured score weights.
+- [x] Merge overlapping temporal results.
+- [x] Apply configurable pre-roll and post-roll.
+- [x] Add cursor-based pagination.
+- [x] Add the search endpoint.
+- [x] Benchmark warm search p95.
 
 ## Clips and playback
 

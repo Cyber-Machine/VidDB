@@ -43,3 +43,33 @@ class UploadCompletionRequest(BaseModel):
     collection_id: str
     object_uri: str
 
+
+class SearchRequest(BaseModel):
+    query: str
+    collection_ids: list[str] | None = None
+    asset_ids: list[str] | None = None
+    start_ms: int | None = None
+    end_ms: int | None = None
+    modalities: list[Literal["transcript", "visual"]] | None = None
+    index_versions: list[str] | None = None
+    vector_weight: float = 0.7
+    full_text_weight: float = 0.3
+    pre_roll_ms: int = 0
+    post_roll_ms: int = 0
+    cursor: str | None = None
+    limit: int = 10
+
+
+class SearchResultResponse(BaseModel):
+    asset_id: str
+    start_ms: int
+    end_ms: int
+    score: float
+    evidence: list[str]
+    modalities: list[str]
+    source_frame_uris: list[str]
+
+
+class SearchResponse(BaseModel):
+    results: list[SearchResultResponse]
+    next_cursor: str | None

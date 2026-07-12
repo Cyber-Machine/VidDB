@@ -12,6 +12,8 @@ from apps.api.schemas import (
     CollectionResponse,
     MultipartUploadRequest,
     MultipartUploadResponse,
+    SearchRequest,
+    SearchResponse,
     UploadCompletionRequest,
 )
 from apps.ingestion import (
@@ -22,6 +24,7 @@ from apps.ingestion import (
     list_collections,
 )
 from apps.persistence.models import MediaAsset
+from apps.search import hybrid_search
 
 
 class HealthResponse(BaseModel):
@@ -141,6 +144,33 @@ async def complete_upload_endpoint(
         idempotency_key,
     )
     return _asset_response(asset)
+
+
+@app.post("/search", response_model=SearchResponse)
+async def search_endpoint(
+    request: SearchRequest,
+    session: Session = Depends(get_session),
+    tenant_id: str = Header(alias="X-Tenant-ID"),
+) -> SearchResponse:
+    return SearchResponse.model_validate(
+        hybrid_search(
+            session=session,
+            tenant_id=tenant_id,
+            query=request.query,
+            collection_ids=request.collection_ids,
+            asset_ids=request.asset_ids,
+            start_ms=request.start_ms,
+            end_ms=request.end_ms,
+            modalities=request.modalities,
+            index_versions=request.index_versions,
+            vector_weight=request.vector_weight,
+            full_text_weight=request.full_text_weight,
+            pre_roll_ms=request.pre_roll_ms,
+            post_roll_ms=request.post_roll_ms,
+            cursor=request.cursor,
+            limit=request.limit,
+        )
+    )
 
 
 def _asset_response(asset: MediaAsset) -> AssetResponse:
