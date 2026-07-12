@@ -572,14 +572,14 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ### Clips and playback
 
-- [ ] Add virtual-clip creation.
-- [ ] Select source fragments for a virtual clip.
-- [ ] Generate an HLS manifest for one clip.
-- [ ] Generate an ordered HLS compilation manifest.
-- [ ] Add signed playback URLs.
-- [ ] Add the clip-creation endpoint.
-- [ ] Add the clip-manifest endpoint.
-- [ ] Test clip creation without copying media bytes.
+- [x] Add virtual-clip creation.
+- [x] Select source fragments for a virtual clip.
+- [x] Generate an HLS manifest for one clip.
+- [x] Generate an ordered HLS compilation manifest.
+- [x] Add signed playback URLs.
+- [x] Add the clip-creation endpoint.
+- [x] Add the clip-manifest endpoint.
+- [x] Test clip creation without copying media bytes.
 
 ### Deletion and production hardening
 

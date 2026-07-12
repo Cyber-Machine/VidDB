@@ -73,3 +73,26 @@ class SearchResultResponse(BaseModel):
 class SearchResponse(BaseModel):
     results: list[SearchResultResponse]
     next_cursor: str | None
+
+
+class ClipSegmentRequest(BaseModel):
+    asset_id: str
+    start_ms: int
+    end_ms: int
+
+
+class ClipCreateRequest(BaseModel):
+    name: str
+    segments: list[ClipSegmentRequest]
+
+
+class ClipResponse(BaseModel):
+    id: str
+    name: str
+    manifest: dict[str, object]
+
+
+class ClipManifestResponse(BaseModel):
+    clip_id: str
+    manifest: str
+    playback_url: str

@@ -8,6 +8,9 @@ from apps.api.dependencies import get_session
 from apps.api.schemas import (
     AssetCreateRequest,
     AssetResponse,
+    ClipCreateRequest,
+    ClipManifestResponse,
+    ClipResponse,
     CollectionCreateRequest,
     CollectionResponse,
     MultipartUploadRequest,
@@ -16,6 +19,7 @@ from apps.api.schemas import (
     SearchResponse,
     UploadCompletionRequest,
 )
+from apps.clips import create_virtual_clip, render_clip_manifest, signed_playback_url
 from apps.ingestion import (
     create_asset,
     create_collection,
@@ -181,4 +185,40 @@ def _asset_response(asset: MediaAsset) -> AssetResponse:
         source_type=asset.source_type,
         processing_state=asset.processing_state.value,
         metadata=asset.metadata_,
+    )
+
+
+@app.post("/clips", response_model=ClipResponse, status_code=201)
+async def create_clip_endpoint(
+    request: ClipCreateRequest,
+    session: Session = Depends(get_session),
+    tenant_id: str = Header(alias="X-Tenant-ID"),
+) -> ClipResponse:
+    clip = create_virtual_clip(
+        session,
+        tenant_id,
+        request.name,
+        [
+            {
+                "asset_id": segment.asset_id,
+                "start_ms": segment.start_ms,
+                "end_ms": segment.end_ms,
+            }
+            for segment in request.segments
+        ],
+    )
+    return ClipResponse(id=clip.id, name=clip.name, manifest=clip.manifest)
+
+
+@app.get("/clips/{clip_id}/manifest", response_model=ClipManifestResponse)
+async def clip_manifest_endpoint(
+    clip_id: str,
+    session: Session = Depends(get_session),
+    tenant_id: str = Header(alias="X-Tenant-ID"),
+) -> ClipManifestResponse:
+    manifest = render_clip_manifest(session, tenant_id, clip_id)
+    return ClipManifestResponse(
+        clip_id=clip_id,
+        manifest=manifest,
+        playback_url=signed_playback_url(clip_id),
     )
