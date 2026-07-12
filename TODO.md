@@ -167,18 +167,18 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ## Temporal queries
 
-- [ ] Define the interval data type.
-- [ ] Implement `INTERSECT`.
-- [ ] Implement `UNION`.
-- [ ] Implement `BEFORE`.
-- [ ] Implement `AFTER`.
-- [ ] Implement `WITHIN`.
-- [ ] Implement `SEQUENCE`.
-- [ ] Implement `DURATION`.
-- [ ] Add deterministic tests for every temporal operator.
-- [ ] Add modality-specific query planning.
-- [ ] Apply temporal operators to retrieved candidates.
-- [ ] Return the query plan with result evidence.
-- [ ] Add boundary-accuracy evaluation.
+- [x] Define the interval data type.
+- [x] Implement `INTERSECT`.
+- [x] Implement `UNION`.
+- [x] Implement `BEFORE`.
+- [x] Implement `AFTER`.
+- [x] Implement `WITHIN`.
+- [x] Implement `SEQUENCE`.
+- [x] Implement `DURATION`.
+- [x] Add deterministic tests for every temporal operator.
+- [x] Add modality-specific query planning.
+- [x] Apply temporal operators to retrieved candidates.
+- [x] Return the query plan with result evidence.
+- [x] Add boundary-accuracy evaluation.
 
 Each TODO must include focused tests and documentation when its behavior requires them.
