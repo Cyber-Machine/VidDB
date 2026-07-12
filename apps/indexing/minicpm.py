@@ -1,6 +1,7 @@
 import importlib
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 
 from apps.indexing.visual import Frame
@@ -22,6 +23,11 @@ class MiniCPMRuntime(Protocol):
 
 
 class TransformersMiniCPMRuntime:
+    def __init__(self) -> None:
+        self.model_id = ""
+        self.processor: Any | None = None
+        self.model: Any | None = None
+
     def describe_image(
         self,
         model_id: str,
@@ -31,20 +37,7 @@ class TransformersMiniCPMRuntime:
         downsample_mode: str,
         max_slice_nums: int,
     ) -> str:
-        try:
-            transformers = importlib.import_module("transformers")
-        except ImportError as error:
-            raise RuntimeError(
-                "MiniCPM-V requires Hugging Face dependencies. Install "
-                '`transformers[torch]`, `torch`, and `torchvision` before use.'
-            ) from error
-
-        processor = transformers.AutoProcessor.from_pretrained(model_id)
-        model = transformers.AutoModelForImageTextToText.from_pretrained(
-            model_id,
-            torch_dtype="auto",
-            device_map="auto",
-        )
+        processor, model = self._load(model_id)
         messages = [
             {
                 "role": "user",
@@ -78,6 +71,30 @@ class TransformersMiniCPMRuntime:
             clean_up_tokenization_spaces=False,
         )
         return _clean_description(output_text[0])
+
+    def _load(self, model_id: str) -> tuple[Any, Any]:
+        if (
+            self.processor is not None
+            and self.model is not None
+            and self.model_id == model_id
+        ):
+            return self.processor, self.model
+        try:
+            transformers = importlib.import_module("transformers")
+        except ImportError as error:
+            raise RuntimeError(
+                "MiniCPM-V requires Hugging Face dependencies. Install "
+                '`transformers[torch]`, `torch`, and `torchvision` before use.'
+            ) from error
+
+        self.processor = transformers.AutoProcessor.from_pretrained(model_id)
+        self.model = transformers.AutoModelForImageTextToText.from_pretrained(
+            model_id,
+            torch_dtype="auto",
+            device_map="auto",
+        )
+        self.model_id = model_id
+        return self.processor, self.model
 
 
 @dataclass(frozen=True)
@@ -115,8 +132,11 @@ def minicpm_provider_from_env() -> MiniCPMVProvider:
 def frame_image_url(frame: Frame) -> str:
     if frame.uri.startswith(("http://", "https://")):
         return frame.uri
+    path = Path(frame.uri)
+    if path.exists():
+        return str(path)
     raise ValueError(
-        "MiniCPM-V Hugging Face provider requires an HTTP or HTTPS image URL"
+        "MiniCPM-V Hugging Face provider requires an HTTP, HTTPS, or local image"
     )
 
 

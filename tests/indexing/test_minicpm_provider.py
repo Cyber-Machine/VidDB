@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from apps.indexing.minicpm import (
@@ -51,13 +53,19 @@ def test_minicpm_provider_uses_hugging_face_runtime_shape() -> None:
     assert runtime.max_slice_nums == 36
 
 
-def test_frame_image_url_accepts_only_http_images() -> None:
+def test_frame_image_url_accepts_http_and_local_images(tmp_path: Path) -> None:
+    frame_path = tmp_path / "frame.jpg"
+    frame_path.write_bytes(b"fake-jpeg")
+
     assert (
         frame_image_url(Frame(timestamp_ms=0, uri="https://example.test/frame.jpg"))
         == "https://example.test/frame.jpg"
     )
+    assert frame_image_url(Frame(timestamp_ms=0, uri=str(frame_path))) == str(
+        frame_path
+    )
 
-    with pytest.raises(ValueError, match="requires an HTTP or HTTPS image URL"):
+    with pytest.raises(ValueError, match="requires an HTTP, HTTPS, or local image"):
         frame_image_url(Frame(timestamp_ms=0, uri="s3://derived/frame.jpg"))
 
 
