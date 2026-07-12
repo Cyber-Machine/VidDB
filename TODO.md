@@ -126,18 +126,18 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ## Custom indexes
 
-- [ ] Add the custom-index request schema.
-- [ ] Persist prompt and prompt hash.
-- [ ] Persist model and sampling configuration.
-- [ ] Validate structured model output.
-- [ ] Reuse existing decoded frames.
-- [ ] Add index aliases such as `production`.
-- [ ] Add index rebuild and promotion operations.
-- [ ] Add the offline evaluation harness.
-- [ ] Implement scoreboard-change indexing.
-- [ ] Implement replay-detection indexing.
-- [ ] Implement speaker/person tracking.
-- [ ] Implement news-topic boundaries.
+- [x] Add the custom-index request schema.
+- [x] Persist prompt and prompt hash.
+- [x] Persist model and sampling configuration.
+- [x] Validate structured model output.
+- [x] Reuse existing decoded frames.
+- [x] Add index aliases such as `production`.
+- [x] Add index rebuild and promotion operations.
+- [x] Add the offline evaluation harness.
+- [x] Implement scoreboard-change indexing.
+- [x] Implement replay-detection indexing.
+- [x] Implement speaker/person tracking.
+- [x] Implement news-topic boundaries.
 
 ## Live streams
 

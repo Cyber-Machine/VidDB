@@ -106,3 +106,18 @@ class DeletionStatusResponse(BaseModel):
 
 class MetricsResponse(BaseModel):
     counters: dict[str, int]
+
+
+class CustomIndexRequest(BaseModel):
+    name: str
+    prompt: str
+    model: str
+    sampling: dict[str, object] = {}
+
+
+class CustomIndexResponse(BaseModel):
+    id: str
+    name: str
+    version: str
+    prompt_hash: str
+    alias: str | None
