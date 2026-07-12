@@ -626,14 +626,14 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ### Events and alerts
 
-- [ ] Add reusable event-rule storage.
-- [ ] Evaluate one event rule against committed records.
-- [ ] Assign stable event IDs.
-- [ ] Deliver live UI events over WebSocket.
-- [ ] Deliver durable alerts by webhook.
-- [ ] Retry failed webhook delivery.
-- [ ] Create a virtual clip for an event.
-- [ ] Measure end-to-end event latency.
+- [x] Add reusable event-rule storage.
+- [x] Evaluate one event rule against committed records.
+- [x] Assign stable event IDs.
+- [x] Deliver live UI events over WebSocket.
+- [x] Deliver durable alerts by webhook.
+- [x] Retry failed webhook delivery.
+- [x] Create a virtual clip for an event.
+- [x] Measure end-to-end event latency.
 
 ### Temporal queries
 

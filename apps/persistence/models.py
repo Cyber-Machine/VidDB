@@ -224,3 +224,15 @@ class Alert(Base):
     status: Mapped[str]
     attempts: Mapped[int] = mapped_column(default=0)
     created_at: Mapped[datetime] = mapped_column(default=now_utc)
+
+
+class EventRule(Base):
+    __tablename__ = "event_rules"
+    __table_args__ = (UniqueConstraint("tenant_id", "name"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
+    name: Mapped[str]
+    query: Mapped[str]
+    target_url: Mapped[str | None]
+    created_at: Mapped[datetime] = mapped_column(default=now_utc)

@@ -6,6 +6,7 @@ from apps.persistence.models import (
     AuditRecord,
     Collection,
     Event,
+    EventRule,
     Index,
     Job,
     LiveSegment,
@@ -45,6 +46,7 @@ class TenantScopedRepository[
         LiveSegment,
         Event,
         Alert,
+        EventRule,
     )
 ]:
     model: type[ModelT]
@@ -198,3 +200,7 @@ class EventRepository(TenantScopedRepository[Event]):
 
 class AlertRepository(TenantScopedRepository[Alert]):
     model = Alert
+
+
+class EventRuleRepository(TenantScopedRepository[EventRule]):
+    model = EventRule
