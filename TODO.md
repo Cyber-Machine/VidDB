@@ -113,16 +113,16 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ## Deletion and production hardening
 
-- [ ] Add the asset metadata tombstone.
-- [ ] Delete asset temporal records.
-- [ ] Delete asset-derived objects.
-- [ ] Delete the source object.
-- [ ] Record asset deletion in the audit trail.
-- [ ] Expose deletion completion status.
-- [ ] Test retrying a partially completed deletion.
-- [ ] Add request authentication.
-- [ ] Add tenant quotas and rate limits.
-- [ ] Add critical-path metrics and dashboards.
+- [x] Add the asset metadata tombstone.
+- [x] Delete asset temporal records.
+- [x] Delete asset-derived objects.
+- [x] Delete the source object.
+- [x] Record asset deletion in the audit trail.
+- [x] Expose deletion completion status.
+- [x] Test retrying a partially completed deletion.
+- [x] Add request authentication.
+- [x] Add tenant quotas and rate limits.
+- [x] Add critical-path metrics and dashboards.
 
 ## Custom indexes
 

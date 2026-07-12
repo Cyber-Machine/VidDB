@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.persistence.models import (
+    AuditRecord,
     Collection,
     Index,
     Job,
@@ -35,6 +36,7 @@ class TenantScopedRepository[
         TemporalRecord,
         VirtualClip,
         Job,
+        AuditRecord,
     )
 ]:
     model: type[ModelT]
@@ -154,3 +156,14 @@ class JobRepository(TenantScopedRepository[Job]):
             Job.idempotency_key == idempotency_key,
         )
         return self.session.scalar(statement)
+
+
+class AuditRecordRepository(TenantScopedRepository[AuditRecord]):
+    model = AuditRecord
+
+    def list_for_subject(self, subject_id: str) -> list[AuditRecord]:
+        statement = select(AuditRecord).where(
+            AuditRecord.tenant_id == self.tenant_id,
+            AuditRecord.subject_id == subject_id,
+        )
+        return list(self.session.scalars(statement))

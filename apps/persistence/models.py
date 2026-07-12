@@ -158,3 +158,14 @@ class Job(Base):
     status: Mapped[str]
     payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=now_utc)
+
+
+class AuditRecord(Base):
+    __tablename__ = "audit_records"
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
+    action: Mapped[str]
+    subject_id: Mapped[str] = mapped_column(index=True)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(default=now_utc)

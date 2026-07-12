@@ -4,7 +4,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from apps.api.dependencies import get_session
+from apps.api.dependencies import authenticate_request, get_session
 from apps.api.schemas import (
     AssetCreateRequest,
     AssetResponse,
@@ -13,6 +13,8 @@ from apps.api.schemas import (
     ClipResponse,
     CollectionCreateRequest,
     CollectionResponse,
+    DeletionStatusResponse,
+    MetricsResponse,
     MultipartUploadRequest,
     MultipartUploadResponse,
     SearchRequest,
@@ -20,6 +22,8 @@ from apps.api.schemas import (
     UploadCompletionRequest,
 )
 from apps.clips import create_virtual_clip, render_clip_manifest, signed_playback_url
+from apps.deletion import asset_deletion_status, delete_asset
+from apps.hardening import metrics_snapshot
 from apps.ingestion import (
     create_asset,
     create_collection,
@@ -39,7 +43,7 @@ class AssetStatusResponse(BaseModel):
     status: str
 
 
-app = FastAPI(title="VideoDB")
+app = FastAPI(title="VideoDB", dependencies=[Depends(authenticate_request)])
 
 
 @app.get("/health/live", response_model=HealthResponse)
@@ -222,3 +226,35 @@ async def clip_manifest_endpoint(
         manifest=manifest,
         playback_url=signed_playback_url(clip_id),
     )
+
+
+@app.delete("/assets/{asset_id}", response_model=DeletionStatusResponse)
+async def delete_asset_endpoint(
+    asset_id: str,
+    session: Session = Depends(get_session),
+    tenant_id: str = Header(alias="X-Tenant-ID"),
+) -> DeletionStatusResponse:
+    try:
+        status = delete_asset(session, tenant_id, asset_id)
+    except ValueError as error:
+        raise HTTPException(status_code=404, detail=str(error)) from error
+    return DeletionStatusResponse.model_validate(status)
+
+
+@app.get("/assets/{asset_id}/deletion", response_model=DeletionStatusResponse)
+async def deletion_status_endpoint(
+    asset_id: str,
+    session: Session = Depends(get_session),
+    tenant_id: str = Header(alias="X-Tenant-ID"),
+) -> DeletionStatusResponse:
+    return DeletionStatusResponse.model_validate(
+        asset_deletion_status(session, tenant_id, asset_id)
+    )
+
+
+@app.get("/metrics", response_model=MetricsResponse)
+async def metrics_endpoint(
+    session: Session = Depends(get_session),
+    tenant_id: str = Header(alias="X-Tenant-ID"),
+) -> MetricsResponse:
+    return MetricsResponse(counters=metrics_snapshot(session, tenant_id))

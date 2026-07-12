@@ -96,3 +96,13 @@ class ClipManifestResponse(BaseModel):
     clip_id: str
     manifest: str
     playback_url: str
+
+
+class DeletionStatusResponse(BaseModel):
+    asset_id: str
+    status: str
+    deleted_objects: list[str]
+
+
+class MetricsResponse(BaseModel):
+    counters: dict[str, int]
