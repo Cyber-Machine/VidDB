@@ -1,6 +1,7 @@
 from typing import Literal
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -33,6 +34,7 @@ from apps.ingestion import (
 )
 from apps.persistence.models import MediaAsset
 from apps.search import hybrid_search
+from apps.ui import dashboard_html
 
 
 class HealthResponse(BaseModel):
@@ -49,6 +51,11 @@ app = FastAPI(title="VideoDB", dependencies=[Depends(authenticate_request)])
 @app.get("/health/live", response_model=HealthResponse)
 async def liveness() -> HealthResponse:
     return HealthResponse(status="ok")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def dashboard_endpoint() -> str:
+    return dashboard_html()
 
 
 @app.get("/health/ready", response_model=HealthResponse)
