@@ -2,13 +2,17 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from apps.persistence.models import (
+    Alert,
     AuditRecord,
     Collection,
+    Event,
     Index,
     Job,
+    LiveSegment,
     MediaAsset,
     MediaSegment,
     Rendition,
+    RTStream,
     TemporalRecord,
     Tenant,
     VirtualClip,
@@ -37,6 +41,10 @@ class TenantScopedRepository[
         VirtualClip,
         Job,
         AuditRecord,
+        RTStream,
+        LiveSegment,
+        Event,
+        Alert,
     )
 ]:
     model: type[ModelT]
@@ -167,3 +175,26 @@ class AuditRecordRepository(TenantScopedRepository[AuditRecord]):
             AuditRecord.subject_id == subject_id,
         )
         return list(self.session.scalars(statement))
+
+
+class RTStreamRepository(TenantScopedRepository[RTStream]):
+    model = RTStream
+
+
+class LiveSegmentRepository(TenantScopedRepository[LiveSegment]):
+    model = LiveSegment
+
+    def list_for_stream(self, stream_id: str) -> list[LiveSegment]:
+        statement = select(LiveSegment).where(
+            LiveSegment.tenant_id == self.tenant_id,
+            LiveSegment.stream_id == stream_id,
+        )
+        return list(self.session.scalars(statement))
+
+
+class EventRepository(TenantScopedRepository[Event]):
+    model = Event
+
+
+class AlertRepository(TenantScopedRepository[Alert]):
+    model = Alert

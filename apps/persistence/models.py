@@ -169,3 +169,58 @@ class AuditRecord(Base):
     subject_id: Mapped[str] = mapped_column(index=True)
     payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=now_utc)
+
+
+class RTStream(Base):
+    __tablename__ = "rt_streams"
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
+    source_uri: Mapped[str]
+    protocol: Mapped[str]
+    watermark_ms: Mapped[int] = mapped_column(default=0)
+    reconnect_generation: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(default=now_utc)
+
+
+class LiveSegment(Base):
+    __tablename__ = "live_segments"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "stream_id", "generation", "sequence"),
+    )
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
+    stream_id: Mapped[str] = mapped_column(ForeignKey("rt_streams.id"), index=True)
+    generation: Mapped[int]
+    sequence: Mapped[int]
+    start_ms: Mapped[int]
+    end_ms: Mapped[int]
+    object_uri: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(default=now_utc)
+
+
+class Event(Base):
+    __tablename__ = "events"
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
+    stream_id: Mapped[str | None] = mapped_column(ForeignKey("rt_streams.id"))
+    asset_id: Mapped[str | None] = mapped_column(ForeignKey("media_assets.id"))
+    rule_name: Mapped[str]
+    start_ms: Mapped[int]
+    end_ms: Mapped[int]
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(default=now_utc)
+
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
+    tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
+    event_id: Mapped[str] = mapped_column(ForeignKey("events.id"), index=True)
+    target_url: Mapped[str]
+    status: Mapped[str]
+    attempts: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(default=now_utc)

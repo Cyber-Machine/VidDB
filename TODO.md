@@ -141,18 +141,18 @@ Complete these in order. Each checkbox should produce one small, reviewable chan
 
 ## Live streams
 
-- [ ] Add the `RTStream` table.
-- [ ] Add the `LiveSegment` table.
-- [ ] Add the `Event` table.
-- [ ] Add the `Alert` table.
-- [ ] Add RTSP ingest.
-- [ ] Add RTMP ingest.
-- [ ] Normalize live-stream timestamps.
-- [ ] Write live CMAF segments to a rolling buffer.
-- [ ] Publish inference windows.
-- [ ] Write live temporal records incrementally.
-- [ ] Persist stream watermarks and reconnect generations.
-- [ ] Test reconnect without duplicate segments.
+- [x] Add the `RTStream` table.
+- [x] Add the `LiveSegment` table.
+- [x] Add the `Event` table.
+- [x] Add the `Alert` table.
+- [x] Add RTSP ingest.
+- [x] Add RTMP ingest.
+- [x] Normalize live-stream timestamps.
+- [x] Write live CMAF segments to a rolling buffer.
+- [x] Publish inference windows.
+- [x] Write live temporal records incrementally.
+- [x] Persist stream watermarks and reconnect generations.
+- [x] Test reconnect without duplicate segments.
 
 ## Events and alerts
 
