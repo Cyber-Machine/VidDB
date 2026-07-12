@@ -1,117 +1,126 @@
-import base64
-import json
-import mimetypes
+import importlib
 import os
-from collections.abc import Mapping
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Protocol
-from urllib import request
 
 from apps.indexing.visual import Frame
 
-DEFAULT_LM_STUDIO_BASE_URL = "http://localhost:1234/v1"
-DEFAULT_MINICPM_MODEL = "minicpm-v"
+DEFAULT_MINICPM_MODEL = "openbmb/MiniCPM-V-4.6"
 
 
-class JsonPoster(Protocol):
-    def post_json(
+class MiniCPMRuntime(Protocol):
+    def describe_image(
         self,
-        url: str,
-        payload: Mapping[str, Any],
-        timeout_seconds: float,
-    ) -> dict[str, object]:
+        model_id: str,
+        image_url: str,
+        prompt: str,
+        max_new_tokens: int,
+        downsample_mode: str,
+        max_slice_nums: int,
+    ) -> str:
         pass
 
 
-class UrllibJsonPoster:
-    def post_json(
+class TransformersMiniCPMRuntime:
+    def describe_image(
         self,
-        url: str,
-        payload: Mapping[str, Any],
-        timeout_seconds: float,
-    ) -> dict[str, object]:
-        data = json.dumps(payload).encode()
-        http_request = request.Request(
-            url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
+        model_id: str,
+        image_url: str,
+        prompt: str,
+        max_new_tokens: int,
+        downsample_mode: str,
+        max_slice_nums: int,
+    ) -> str:
+        try:
+            transformers = importlib.import_module("transformers")
+        except ImportError as error:
+            raise RuntimeError(
+                "MiniCPM-V requires Hugging Face dependencies. Install "
+                '`transformers[torch]`, `torch`, and `torchvision` before use.'
+            ) from error
+
+        processor = transformers.AutoProcessor.from_pretrained(model_id)
+        model = transformers.AutoModelForImageTextToText.from_pretrained(
+            model_id,
+            torch_dtype="auto",
+            device_map="auto",
         )
-        with request.urlopen(http_request, timeout=timeout_seconds) as response:
-            return json.loads(response.read().decode())
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "url": image_url},
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ]
+        inputs = processor.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_dict=True,
+            return_tensors="pt",
+            downsample_mode=downsample_mode,
+            max_slice_nums=max_slice_nums,
+        ).to(model.device)
+        generated_ids = model.generate(
+            **inputs,
+            downsample_mode=downsample_mode,
+            max_new_tokens=max_new_tokens,
+        )
+        generated_ids_trimmed = [
+            output_ids[len(input_ids) :]
+            for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        output_text = processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )
+        return _clean_description(output_text[0])
 
 
 @dataclass(frozen=True)
 class MiniCPMVProvider:
-    base_url: str = DEFAULT_LM_STUDIO_BASE_URL
-    model: str = DEFAULT_MINICPM_MODEL
+    model_id: str = DEFAULT_MINICPM_MODEL
     prompt: str = (
         "Describe this video frame for retrieval. Include visible objects, "
-        "scene context, actions, text, people, and any event cues. Be concise."
+        "scene context, actions, text, people, and event cues. Be concise."
     )
-    timeout_seconds: float = 30.0
-    poster: JsonPoster = UrllibJsonPoster()
+    max_new_tokens: int = 256
+    downsample_mode: str = "16x"
+    max_slice_nums: int = 36
+    runtime: MiniCPMRuntime = TransformersMiniCPMRuntime()
 
     def describe(self, frame: Frame) -> str:
-        payload = {
-            "model": self.model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": self.prompt},
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": frame_image_url(frame)},
-                        },
-                    ],
-                }
-            ],
-            "temperature": 0,
-        }
-        response = self.poster.post_json(
-            f"{self.base_url.rstrip('/')}/chat/completions",
-            payload,
-            self.timeout_seconds,
+        return self.runtime.describe_image(
+            self.model_id,
+            frame_image_url(frame),
+            self.prompt,
+            self.max_new_tokens,
+            self.downsample_mode,
+            self.max_slice_nums,
         )
-        return _extract_description(response)
 
 
 def minicpm_provider_from_env() -> MiniCPMVProvider:
     return MiniCPMVProvider(
-        base_url=os.environ.get(
-            "VIDEODB_LM_STUDIO_BASE_URL",
-            DEFAULT_LM_STUDIO_BASE_URL,
-        ),
-        model=os.environ.get("VIDEODB_MINICPM_MODEL", DEFAULT_MINICPM_MODEL),
+        model_id=os.environ.get("VIDEODB_MINICPM_MODEL", DEFAULT_MINICPM_MODEL),
+        downsample_mode=os.environ.get("VIDEODB_MINICPM_DOWNSAMPLE_MODE", "16x"),
+        max_slice_nums=int(os.environ.get("VIDEODB_MINICPM_MAX_SLICE_NUMS", "36")),
+        max_new_tokens=int(os.environ.get("VIDEODB_MINICPM_MAX_NEW_TOKENS", "256")),
     )
 
 
 def frame_image_url(frame: Frame) -> str:
-    if frame.uri.startswith(("data:", "http://", "https://")):
+    if frame.uri.startswith(("http://", "https://")):
         return frame.uri
-    path = Path(frame.uri)
-    if not path.exists():
-        raise ValueError(
-            "MiniCPM-V provider requires a local, HTTP, HTTPS, or data URL frame"
-        )
-    content_type = mimetypes.guess_type(path.name)[0] or "image/jpeg"
-    encoded = base64.b64encode(path.read_bytes()).decode()
-    return f"data:{content_type};base64,{encoded}"
+    raise ValueError(
+        "MiniCPM-V Hugging Face provider requires an HTTP or HTTPS image URL"
+    )
 
 
-def _extract_description(response: dict[str, object]) -> str:
-    choices = response.get("choices")
-    if not isinstance(choices, list) or not choices:
-        raise ValueError("MiniCPM-V response did not include choices")
-    first_choice = choices[0]
-    if not isinstance(first_choice, dict):
-        raise ValueError("MiniCPM-V response choice is invalid")
-    message = first_choice.get("message")
-    if not isinstance(message, dict):
-        raise ValueError("MiniCPM-V response did not include a message")
-    content = message.get("content")
-    if not isinstance(content, str) or not content.strip():
+def _clean_description(value: Any) -> str:
+    if not isinstance(value, str) or not value.strip():
         raise ValueError("MiniCPM-V response content is empty")
-    return content.strip()
+    return value.strip()
