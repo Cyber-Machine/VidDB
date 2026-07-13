@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VideoDB · Explainability workspace</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand"><span class="brand-mark">V</span><span>VideoDB</span></div>
+        <p class="kicker">Explainability workspace</p>
+        <nav><button class="nav-item active" data-view="workspace">⌁ <span>Workspace</span></button><button class="nav-item" data-view="ingest">＋ <span>Ingest video</span></button><button class="nav-item" data-view="docs">▤ <span>API contract</span></button></nav>
+        <div class="sidebar-foot"><span class="status-dot"></span> API <code id="api-label">localhost:8000</code><button id="api-config" class="link-button">Configure</button></div>
+      </aside>
+      <main class="main">
+        <header class="topbar"><div><p class="kicker">Collection / football highlights</p><h1 id="view-title">Explainable search</h1></div><button class="primary" id="new-ingest">＋ Add video</button></header>
+        <section id="workspace" class="view">
+          <div class="searchbar"><span>⌕</span><input id="query" value="goal celebration" placeholder="Search what is happening in the video…" /><select id="modality"><option value="">All modalities</option><option value="visual">Visual</option><option value="transcript">Transcript</option></select><button class="primary" id="search">Search</button></div>
+          <div class="workspace-grid">
+            <section class="card player-card"><div class="card-head"><div><span class="eyebrow">Selected asset</span><h2 id="asset-name">France–Morocco highlights</h2></div><span class="badge ready" id="asset-status">READY</span></div><video id="player" controls preload="metadata" src="/private/tmp/videodb-football-index/Lfo49ZbV4WU.mp4"></video><div class="player-meta"><span id="asset-id">demo-football · 130s</span><button class="ghost" id="view-asset-json">View asset JSON</button></div><div class="timeline" id="timeline"></div></section>
+            <aside class="card inspector"><div class="tabs"><button class="tab active" data-tab="visual">Visual</button><button class="tab" data-tab="json">JSON</button></div><div id="inspector-content"></div></aside>
+          </div>
+          <section class="card results-card"><div class="card-head"><div><span class="eyebrow">Evidence</span><h2>Why this matched</h2></div><span class="muted" id="result-count">5 temporal records</span></div><div id="results"></div></section>
+        </section>
+        <section id="ingest" class="view hidden"><div class="card ingest-card"><span class="eyebrow">New asset</span><h2>Send a video into the index</h2><p class="muted">Register a URL or existing object. Multipart mode shows the same presigned-upload contract used by the API.</p><div class="source-tabs"><button class="source-tab active" data-source="url">URL</button><button class="source-tab" data-source="object">Object URI</button><button class="source-tab" data-source="multipart">Multipart</button></div><label>Collection ID<input id="collection-id" value="demo-football" /></label><label id="source-label">Video URL<input id="source-uri" value="https://example.com/highlights.mp4" /></label><label>Idempotency key<input id="idempotency" value="ui-demo-001" /></label><button class="primary" id="register">Register video</button><pre id="ingest-output" class="output">The request and response will appear here.</pre></div></section>
+        <section id="docs" class="view hidden"><div class="card docs-card"><span class="eyebrow">Contract</span><h2>What the API returns</h2><div class="contract-grid"><div><h3>1 · Asset response</h3><p class="muted">The first response is intentionally small: an ID and processing state. Poll <code>/assets/{id}/status</code> while work continues.</p><pre>{
+  "id": "asset-id",
+  "processing_state": "pending",
+  "source_type": "url"
+}</pre></div><div><h3>2 · Temporal evidence</h3><p class="muted">Indexers attach evidence to time ranges. The UI can jump the player directly to the source.</p><pre>{
+  "start_ms": 55000,
+  "end_ms": 75000,
+  "modalities": ["visual"],
+  "evidence": ["goal celebration"]
+}</pre></div><div><h3>3 · Explainability chain</h3><p class="muted">Every result should make the path visible: query → candidate → weighted score → merged range → clip.</p><pre>query
+  ↓
+vector + full-text candidates
+  ↓
+weighted score (0.7 / 0.3)
+  ↓
+temporal merge + roll
+  ↓
+playable timestamp</pre></div></div></div></section>
+      </main>
+    </div>
+    <div class="modal hidden" id="modal"><div class="modal-card"><button class="close" id="close-modal">×</button><h2>API connection</h2><p class="muted">Use the FastAPI origin used by this workspace.</p><label>API base URL<input id="api-base" value="http://localhost:8000" /></label><button class="primary" id="save-api">Save connection</button></div></div>
+    <script src="app.js"></script>
+  </body>
+</html>
