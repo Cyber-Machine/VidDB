@@ -1,19 +1,113 @@
 const demoResults = [
-  {start_ms:55000,end_ms:75000,score:.93,evidence:['Players score and celebrate near the goal'],modalities:['visual'],source_frame_uris:['frames/frame_013.jpg']},
-  {start_ms:80000,end_ms:100000,score:.88,evidence:['Second goal build-up and France celebration'],modalities:['visual'],source_frame_uris:['frames/frame_018.jpg']},
-  {start_ms:100000,end_ms:115000,score:.74,evidence:['Post-goal celebration and goalkeeper reaction'],modalities:['visual'],source_frame_uris:['frames/frame_022.jpg']},
-  {start_ms:30000,end_ms:50000,score:.61,evidence:['Goal-mouth pressure in the penalty area'],modalities:['visual'],source_frame_uris:['frames/frame_009.jpg']},
-  {start_ms:0,end_ms:20000,score:.42,evidence:['Opening attack in open play'],modalities:['visual'],source_frame_uris:['frames/frame_003.jpg']},
+  { start_ms: 55000, end_ms: 75000, score: 0.93, evidence: ['Players score and celebrate near the goal'], modalities: ['visual'], source_frame_uris: ['frames/frame_013.jpg'] },
+  { start_ms: 80000, end_ms: 100000, score: 0.88, evidence: ['Second goal build-up and France celebration'], modalities: ['visual'], source_frame_uris: ['frames/frame_018.jpg'] },
+  { start_ms: 100000, end_ms: 115000, score: 0.74, evidence: ['Post-goal celebration and goalkeeper reaction'], modalities: ['visual'], source_frame_uris: ['frames/frame_022.jpg'] },
+  { start_ms: 30000, end_ms: 50000, score: 0.61, evidence: ['Goal-mouth pressure in the penalty area'], modalities: ['visual'], source_frame_uris: ['frames/frame_009.jpg'] },
+  { start_ms: 0, end_ms: 20000, score: 0.42, evidence: ['Opening attack in open play'], modalities: ['visual'], source_frame_uris: ['frames/frame_003.jpg'] },
 ];
 let apiBase = localStorage.getItem('videodb-api') || 'http://localhost:8000';
-let selected = demoResults[0]; let activeTab = 'visual';
+let selected = demoResults[0];
+let activeTab = 'visual';
+let pollTimer = null;
 const $ = id => document.getElementById(id);
-const fmt = ms => { const s=Math.floor(ms/1000); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; };
-function renderTimeline(){ $('timeline').innerHTML=demoResults.map((r,i)=>`<span class="mark ${i===0?'selected':''}" data-index="${i}" style="left:${r.start_ms/1303.81}%;width:${Math.max(2,(r.end_ms-r.start_ms)/1303.81)}%" title="${fmt(r.start_ms)}–${fmt(r.end_ms)}"></span>`).join(''); document.querySelectorAll('.mark').forEach(m=>m.onclick=()=>selectResult(Number(m.dataset.index))); }
-function selectResult(index){ selected=demoResults[index]; document.querySelectorAll('.mark').forEach(m=>m.classList.toggle('selected',Number(m.dataset.index)===index)); document.querySelectorAll('.result').forEach((r,i)=>r.classList.toggle('selected',i===index)); $('player').currentTime=selected.start_ms/1000; renderInspector(); }
-function renderResults(){ $('results').innerHTML=demoResults.map((r,i)=>`<div class="result ${i===0?'selected':''}" data-index="${i}"><time>${fmt(r.start_ms)}–${fmt(r.end_ms)}</time><div><strong>${r.evidence[0]}</strong><small>${r.modalities.join(' · ')} · source frame available</small></div><span class="score">${Math.round(r.score*100)}%</span></div>`).join(''); document.querySelectorAll('.result').forEach(r=>r.onclick=()=>selectResult(Number(r.dataset.index))); }
-function renderInspector(){ const r=selected; if(activeTab==='json'){ $('inspector-content').innerHTML=`<pre class="inspector-body">${JSON.stringify(r,null,2)}</pre>`; return; } $('inspector-content').innerHTML=`<div class="inspector-body"><span class="eyebrow">Selected evidence</span><h3>${r.evidence[0]}</h3><div class="meta-row"><span>Temporal range</span><strong>${fmt(r.start_ms)} – ${fmt(r.end_ms)}</strong></div><div class="meta-row"><span>Modality</span><strong>${r.modalities.join(', ')}</strong></div><div class="meta-row"><span>Vector score</span><strong>${Math.round(r.score*100)} / 100</strong></div><div class="meta-row"><span>Source frame</span><strong>${r.source_frame_uris[0]}</strong></div><div class="explain-box"><strong>Why this matched</strong><br><span class="muted">The query is embedded, compared with visual temporal records, weighted with full-text candidates, then merged into this playable range.</span></div></div>`; }
-function setView(name){ document.querySelectorAll('.view').forEach(v=>v.classList.toggle('hidden',v.id!==name)); document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===name)); $('view-title').textContent=name==='workspace'?'Explainable search':name==='ingest'?'Ingest video':'API contract'; }
-async function search(){ const query=$('query').value.trim(); if(!query)return; $('result-count').textContent='Searching…'; try { const response=await fetch(`${apiBase}/search`,{method:'POST',headers:{'content-type':'application/json','X-Tenant-ID':'demo'},body:JSON.stringify({query,modalities:$('modality').value?[$('modality').value]:undefined,limit:10})}); if(!response.ok)throw Error(`HTTP ${response.status}`); const data=await response.json(); if(data.results?.length){ demoResults.splice(0,demoResults.length,...data.results); selected=demoResults[0]; renderResults(); renderTimeline(); renderInspector(); } $('result-count').textContent=`${data.results?.length||0} temporal records`; } catch { $('result-count').textContent='Demo evidence · API unavailable'; } }
-async function register(){ const sourceType=document.querySelector('.source-tab.active').dataset.source; const collection=$('collection-id').value; const key=$('idempotency').value; const output=$('ingest-output'); try { let request, endpoint; if(sourceType==='multipart'){ request={collection_id:collection,filename:$('source-uri').value||'video.mp4',part_count:1}; endpoint='/uploads/multipart'; } else { request={collection_id:collection,source_uri:$('source-uri').value,source_type:sourceType}; endpoint='/assets'; } const response=await fetch(apiBase+endpoint,{method:'POST',headers:{'content-type':'application/json','X-Tenant-ID':'demo','Idempotency-Key':key},body:JSON.stringify(request)}); const data=await response.json(); if(!response.ok)throw Error(data.detail||`HTTP ${response.status}`); output.textContent=JSON.stringify({request:{endpoint,body:request},response:data},null,2); } catch(error) { output.textContent=`Demo request (API unavailable):\n${JSON.stringify({endpoint:sourceType==='multipart'?'/uploads/multipart':'/assets',body:{collection_id:collection,source_uri:$('source-uri').value,source_type:sourceType}},null,2)}\n\n${error.message}`; } }
-document.querySelectorAll('.nav-item').forEach(n=>n.onclick=()=>setView(n.dataset.view)); $('new-ingest').onclick=()=>setView('ingest'); document.querySelectorAll('.source-tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.source-tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('source-label').innerHTML=t.dataset.source==='multipart'?'Filename<input id="source-uri" value="highlights.mp4" />':`${t.dataset.source==='url'?'Video URL':'Object URI'}<input id="source-uri" value="${t.dataset.source==='url'?'https://example.com/highlights.mp4':'s3://uploads/highlights.mp4'}" />`;}); $('register').onclick=register; $('search').onclick=search; $('query').onkeydown=e=>{if(e.key==='Enter')search();}; document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{activeTab=t.dataset.tab;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===t));renderInspector();}); $('api-config').onclick=()=>$('modal').classList.remove('hidden'); $('close-modal').onclick=()=>$('modal').classList.add('hidden'); $('save-api').onclick=()=>{apiBase=$('api-base').value.replace(/\/$/,'');localStorage.setItem('videodb-api',apiBase);$('api-label').textContent=apiBase.replace(/^https?:\/\//,'');$('modal').classList.add('hidden');}; $('api-label').textContent=apiBase.replace(/^https?:\/\//,''); renderResults(); renderTimeline(); renderInspector();
+const fmt = ms => { const s = Math.floor(ms / 1000); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+
+function renderTimeline() {
+  $('timeline').innerHTML = demoResults.map((r, i) => `<span class="mark ${i === 0 ? 'selected' : ''}" data-index="${i}" style="left:${r.start_ms / 1303.81}%;width:${Math.max(2, (r.end_ms - r.start_ms) / 1303.81)}%" title="${fmt(r.start_ms)}–${fmt(r.end_ms)}"></span>`).join('');
+  document.querySelectorAll('.mark').forEach(mark => { mark.onclick = () => selectResult(Number(mark.dataset.index)); });
+}
+
+function selectResult(index) {
+  selected = demoResults[index];
+  document.querySelectorAll('.mark').forEach(mark => mark.classList.toggle('selected', Number(mark.dataset.index) === index));
+  document.querySelectorAll('.result').forEach((result, i) => result.classList.toggle('selected', i === index));
+  $('player').currentTime = selected.start_ms / 1000;
+  renderInspector();
+}
+
+function renderResults() {
+  $('results').innerHTML = demoResults.map((r, i) => `<div class="result ${i === 0 ? 'selected' : ''}" data-index="${i}"><time>${fmt(r.start_ms)}–${fmt(r.end_ms)}</time><div><strong>${r.evidence[0]}</strong><small>${r.modalities.join(' · ')} · source frame available</small></div><span class="score">${Math.round(r.score * 100)}%</span></div>`).join('');
+  document.querySelectorAll('.result').forEach(result => { result.onclick = () => selectResult(Number(result.dataset.index)); });
+}
+
+function renderInspector() {
+  const record = selected;
+  if (activeTab === 'json') {
+    $('inspector-content').innerHTML = `<pre class="inspector-body">${JSON.stringify(record, null, 2)}</pre>`;
+    return;
+  }
+  $('inspector-content').innerHTML = `<div class="inspector-body"><span class="eyebrow">Selected evidence</span><h3>${record.evidence[0]}</h3><div class="meta-row"><span>Temporal range</span><strong>${fmt(record.start_ms)} – ${fmt(record.end_ms)}</strong></div><div class="meta-row"><span>Modality</span><strong>${record.modalities.join(', ')}</strong></div><div class="meta-row"><span>Vector score</span><strong>${Math.round(record.score * 100)} / 100</strong></div><div class="meta-row"><span>Source frame</span><strong>${record.source_frame_uris[0]}</strong></div><div class="provider-card"><span>Provider</span><strong>MiniCPM-V · openbmb/MiniCPM-V-4.6</strong><small>visual/v1 · retrieval-v1 · downsample 16x · max slices 36</small></div><div class="explain-box"><strong>Why this matched</strong><br><span class="muted">The query is embedded, compared with visual temporal records, weighted with full-text candidates, then merged into this playable range.</span></div></div>`;
+}
+
+function setView(name) {
+  document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden', view.id !== name));
+  document.querySelectorAll('.nav-item').forEach(nav => nav.classList.toggle('active', nav.dataset.view === name));
+  $('view-title').textContent = name === 'workspace' ? 'Explainable search' : name === 'ingest' ? 'Ingest video' : 'API contract';
+}
+
+async function search() {
+  const query = $('query').value.trim();
+  if (!query) return;
+  $('result-count').textContent = 'Searching…';
+  try {
+    const response = await fetch(`${apiBase}/search`, { method: 'POST', headers: { 'content-type': 'application/json', 'X-Tenant-ID': 'demo' }, body: JSON.stringify({ query, modalities: $('modality').value ? [$('modality').value] : undefined, limit: 10 }) });
+    if (!response.ok) throw Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (data.results?.length) { demoResults.splice(0, demoResults.length, ...data.results); selected = demoResults[0]; renderResults(); renderTimeline(); renderInspector(); }
+    $('result-count').textContent = `${data.results?.length || 0} temporal records`;
+  } catch { $('result-count').textContent = 'Demo evidence · API unavailable'; }
+}
+
+function setStatus(status) {
+  const label = $('asset-status');
+  label.textContent = status.toUpperCase();
+  label.className = `badge ${status === 'ready' ? 'ready' : status === 'partially_ready' ? 'partial' : 'working'}`;
+}
+
+function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+function pollAssetStatus(assetId) {
+  stopPolling();
+  let attempts = 0;
+  const poll = async () => {
+    attempts += 1;
+    try {
+      const response = await fetch(`${apiBase}/assets/${assetId}/status`, { headers: { 'X-Tenant-ID': 'demo' } });
+      if (!response.ok) throw Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      setStatus(data.status);
+      if (['ready', 'partially_ready', 'failed'].includes(data.status) || attempts >= 20) stopPolling();
+    } catch { setStatus('pending'); if (attempts >= 20) stopPolling(); }
+  };
+  poll();
+  pollTimer = setInterval(poll, 1500);
+}
+
+async function register() {
+  const sourceType = document.querySelector('.source-tab.active').dataset.source;
+  const collection = $('collection-id').value;
+  const key = $('idempotency').value;
+  const output = $('ingest-output');
+  setStatus('pending');
+  try {
+    let request; let endpoint;
+    if (sourceType === 'multipart') { request = { collection_id: collection, filename: $('source-uri').value || 'video.mp4', part_count: 1 }; endpoint = '/uploads/multipart'; }
+    else { request = { collection_id: collection, source_uri: $('source-uri').value, source_type: sourceType }; endpoint = '/assets'; }
+    const response = await fetch(apiBase + endpoint, { method: 'POST', headers: { 'content-type': 'application/json', 'X-Tenant-ID': 'demo', 'Idempotency-Key': key }, body: JSON.stringify(request) });
+    const data = await response.json();
+    if (!response.ok) throw Error(data.detail || `HTTP ${response.status}`);
+    output.textContent = JSON.stringify({ request: { endpoint, body: request }, response: data }, null, 2);
+    if (data.id) { $('asset-id').textContent = `${data.id} · ${data.source_type}`; $('asset-name').textContent = data.source_uri; pollAssetStatus(data.id); }
+  } catch (error) {
+    setStatus('ready');
+    output.textContent = `Demo request (API unavailable):\n${JSON.stringify({ endpoint: sourceType === 'multipart' ? '/uploads/multipart' : '/assets', body: { collection_id: collection, source_uri: $('source-uri').value, source_type: sourceType } }, null, 2)}\n\n${error.message}`;
+  }
+}
+
+document.querySelectorAll('.nav-item').forEach(nav => { nav.onclick = () => setView(nav.dataset.view); });
+$('new-ingest').onclick = () => setView('ingest');
+document.querySelectorAll('.source-tab').forEach(tab => { tab.onclick = () => { document.querySelectorAll('.source-tab').forEach(item => item.classList.remove('active')); tab.classList.add('active'); $('source-label').innerHTML = tab.dataset.source === 'multipart' ? 'Filename<input id="source-uri" value="highlights.mp4" />' : `${tab.dataset.source === 'url' ? 'Video URL' : 'Object URI'}<input id="source-uri" value="${tab.dataset.source === 'url' ? 'https://example.com/highlights.mp4' : 's3://uploads/highlights.mp4'}" />`; }; });
+$('register').onclick = register; $('search').onclick = search; $('query').onkeydown = event => { if (event.key === 'Enter') search(); };
+document.querySelectorAll('.tab').forEach(tab => { tab.onclick = () => { activeTab = tab.dataset.tab; document.querySelectorAll('.tab').forEach(item => item.classList.toggle('active', item === tab)); renderInspector(); }; });
+$('api-config').onclick = () => $('modal').classList.remove('hidden'); $('close-modal').onclick = () => $('modal').classList.add('hidden'); $('save-api').onclick = () => { apiBase = $('api-base').value.replace(/\/$/, ''); localStorage.setItem('videodb-api', apiBase); $('api-label').textContent = apiBase.replace(/^https?:\/\//, ''); $('modal').classList.add('hidden'); };
+$('api-label').textContent = apiBase.replace(/^https?:\/\//, ''); renderResults(); renderTimeline(); renderInspector();

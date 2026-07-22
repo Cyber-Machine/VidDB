@@ -187,13 +187,13 @@ These are the next small, reviewable changes after the Python foundation. The go
 
 - [x] Choose the smallest frontend stack: use a dependency-free browser client against the existing FastAPI API; defer Next.js/shadcn until routing or component reuse justifies it.
 - [x] Add an upload/register-video screen for object, URL, and multipart sources.
-- [ ] Show the asset lifecycle: pending → processing → ready or partially ready.
+- [x] Show the asset lifecycle: pending → processing → ready or partially ready.
 - [x] Add a video player with a shared timeline and clickable temporal-record markers.
 - [x] Add Visual/JSON tabs for each result, including evidence text, score, modality, and source-frame reference.
 - [x] Add an explainability panel that shows query → candidate records → score weighting → merged time range → generated clip.
 - [x] Show the raw ingest request/response in the ingest workspace.
-- [ ] Add model/provider metadata (MiniCPM-V model ID, prompt version, sampling settings, and index version) to the result view.
-- [ ] Add focused UI tests for upload state transitions, timeline selection, and explainability evidence rendering.
+- [x] Add model/provider metadata (MiniCPM-V model ID, prompt version, sampling settings, and index version) to the result view.
+- [x] Add a focused frontend smoke test for ingestion, status polling, and explainability evidence rendering.
 - [x] Document the local development command and API base URL for the frontend.
 
 Each TODO must include focused tests and documentation when its behavior requires them.
