@@ -1,6 +1,8 @@
+import os
 from typing import Literal
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -46,6 +48,21 @@ class AssetStatusResponse(BaseModel):
 
 
 app = FastAPI(title="VideoDB", dependencies=[Depends(authenticate_request)])
+cors_origins = [
+    origin.strip()
+    for origin in os.environ.get(
+        "VIDEODB_CORS_ORIGINS",
+        "http://localhost:4173,http://127.0.0.1:4173",
+    ).split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Tenant-ID", "Idempotency-Key"],
+)
 
 
 @app.get("/health/live", response_model=HealthResponse)

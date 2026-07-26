@@ -197,3 +197,10 @@ These are the next small, reviewable changes after the Python foundation. The go
 - [x] Document the local development command and API base URL for the frontend.
 
 Each TODO must include focused tests and documentation when its behavior requires them.
+
+## Next: frontend integration hardening
+
+- [x] Allow the documented local frontend origin to call the FastAPI API.
+- [ ] Upload browser-selected multipart bytes to the returned presigned part URLs.
+- [ ] Add API-backed collection and asset navigation instead of demo-only selection.
+- [ ] Add focused integration tests for browser-origin requests when testing work resumes.
