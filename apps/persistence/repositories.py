@@ -152,6 +152,18 @@ class TemporalRecordRepository(TenantScopedRepository[TemporalRecord]):
         )
         return list(self.session.scalars(statement))
 
+    def list_for_stream_and_index(
+        self,
+        stream_id: str,
+        index_id: str,
+    ) -> list[TemporalRecord]:
+        statement = select(TemporalRecord).where(
+            TemporalRecord.tenant_id == self.tenant_id,
+            TemporalRecord.stream_id == stream_id,
+            TemporalRecord.index_id == index_id,
+        )
+        return list(self.session.scalars(statement))
+
 
 class VirtualClipRepository(TenantScopedRepository[VirtualClip]):
     model = VirtualClip

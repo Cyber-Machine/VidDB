@@ -1,7 +1,8 @@
 from collections.abc import Iterator
+from typing import Any
 
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -53,6 +54,17 @@ def session() -> Iterator[Session]:
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+
+    @event.listens_for(engine, "connect")
+    def enable_sqlite_foreign_keys(
+        dbapi_connection: Any,
+        connection_record: object,
+    ) -> None:
+        del connection_record
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
     run_migrations(engine)
     session_factory = sessionmaker(bind=engine, expire_on_commit=False)
     with session_factory() as session:

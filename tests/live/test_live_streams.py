@@ -36,6 +36,8 @@ def test_live_stream_ingest_buffer_records_and_reconnect(session: Session) -> No
     assert sequences == [2, 3, 4]
     assert publish_inference_windows(session, tenant.id, rtsp.id)[-1]["end_ms"] == 4000
     assert record.payload["label"] == "motion"
+    assert record.asset_id is None
+    assert record.stream_id == rtsp.id
 
     reconnected = reconnect_stream(session, tenant.id, rtsp.id)
     next_segment = write_live_segment(session, tenant.id, rtsp.id, 1, 4000, 5000)

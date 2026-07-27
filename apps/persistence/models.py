@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
-from sqlalchemy import JSON, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy import JSON, CheckConstraint, Enum, ForeignKey, UniqueConstraint
 from sqlalchemy import Index as SqlIndex
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -121,17 +121,30 @@ class Index(Base):
 
 class TemporalRecord(Base):
     __tablename__ = "temporal_records"
+    __table_args__ = (
+        CheckConstraint(
+            "(asset_id IS NOT NULL) <> (stream_id IS NOT NULL)",
+            name="ck_temporal_records_exactly_one_source",
+        ),
+    )
 
     id: Mapped[str] = mapped_column(primary_key=True, default=new_id)
     tenant_id: Mapped[str] = mapped_column(ForeignKey("tenants.id"), index=True)
-    asset_id: Mapped[str] = mapped_column(ForeignKey("media_assets.id"), index=True)
+    asset_id: Mapped[str | None] = mapped_column(
+        ForeignKey("media_assets.id"),
+        index=True,
+    )
+    stream_id: Mapped[str | None] = mapped_column(
+        ForeignKey("rt_streams.id"),
+        index=True,
+    )
     index_id: Mapped[str] = mapped_column(ForeignKey("indexes.id"), index=True)
     start_ms: Mapped[int]
     end_ms: Mapped[int]
     payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(default=now_utc)
 
-    asset: Mapped[MediaAsset] = relationship(back_populates="temporal_records")
+    asset: Mapped[MediaAsset | None] = relationship(back_populates="temporal_records")
     index: Mapped[Index] = relationship(back_populates="temporal_records")
 
 

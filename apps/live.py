@@ -91,7 +91,7 @@ def write_live_temporal_record(
     index = _live_index(session, tenant_id)
     record = TemporalRecordRepository(session, tenant_id).add(
         TemporalRecord(
-            asset_id=stream_id,
+            stream_id=stream_id,
             index_id=index.id,
             start_ms=start_ms,
             end_ms=end_ms,

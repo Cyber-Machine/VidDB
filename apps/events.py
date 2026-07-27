@@ -45,9 +45,7 @@ def evaluate_event_rule(
         event = EventRepository(session, tenant_id).add(
             Event(
                 id=event_id,
-                stream_id=str(record.payload.get("stream_id"))
-                if record.payload.get("stream_id") is not None
-                else None,
+                stream_id=record.stream_id,
                 asset_id=record.asset_id,
                 rule_name=rule.name,
                 start_ms=record.start_ms,
@@ -61,7 +59,8 @@ def evaluate_event_rule(
 
 
 def stable_event_id(rule_id: str, record: TemporalRecord) -> str:
-    key = f"{rule_id}:{record.asset_id}:{record.start_ms}:{record.end_ms}"
+    source_id = record.asset_id or record.stream_id
+    key = f"{rule_id}:{source_id}:{record.start_ms}:{record.end_ms}"
     return hashlib.sha256(key.encode()).hexdigest()[:32]
 
 
