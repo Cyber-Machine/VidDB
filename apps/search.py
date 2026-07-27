@@ -6,7 +6,11 @@ from typing import TypedDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from apps.indexing.common import cosine_score, text_embedding
+from apps.indexing.embeddings import (
+    EmbeddingProvider,
+    cosine_similarity,
+    default_embedding_provider,
+)
 from apps.persistence.models import Index, MediaAsset, TemporalRecord
 
 
@@ -64,6 +68,7 @@ def hybrid_search(
     post_roll_ms: int = 0,
     cursor: str | None = None,
     limit: int = 10,
+    embedding_provider: EmbeddingProvider | None = None,
 ) -> SearchResponse:
     records = _load_records(
         session=session,
@@ -75,9 +80,15 @@ def hybrid_search(
         modalities=modalities,
         index_versions=index_versions,
     )
-    query_embedding = text_embedding(query)
+    semantic_embeddings = embedding_provider or default_embedding_provider()
+    query_embedding = semantic_embeddings.embed_query(query)
     with ThreadPoolExecutor(max_workers=2) as executor:
-        vector_future = executor.submit(_vector_candidates, records, query_embedding)
+        vector_future = executor.submit(
+            _vector_candidates,
+            records,
+            query_embedding,
+            semantic_embeddings.model_id,
+        )
         full_text_future = executor.submit(_full_text_candidates, records, query)
         candidates = vector_future.result() + full_text_future.result()
 
@@ -137,10 +148,11 @@ def _load_records(
 def _vector_candidates(
     records: list[SearchRecord],
     query_embedding: list[float],
+    embedding_model: str,
 ) -> list[Candidate]:
     candidates: list[Candidate] = []
     for record in records:
-        embedding = _embedding(record)
+        embedding = _embedding(record, embedding_model)
         if embedding is None:
             continue
         candidates.append(
@@ -151,7 +163,7 @@ def _vector_candidates(
                 modality=record.index_name,
                 evidence=_evidence(record),
                 source_frame_uri=_source_frame_uri(record),
-                vector_score=cosine_score(query_embedding, embedding),
+                vector_score=cosine_similarity(query_embedding, embedding),
                 full_text_score=0.0,
             )
         )
@@ -280,7 +292,12 @@ def _source_frame_uri(record: SearchRecord) -> str | None:
     return value if isinstance(value, str) else None
 
 
-def _embedding(record: SearchRecord) -> list[float] | None:
+def _embedding(
+    record: SearchRecord,
+    embedding_model: str,
+) -> list[float] | None:
+    if record.payload.get("embedding_model") != embedding_model:
+        return None
     value = record.payload.get("embedding")
     if not isinstance(value, list):
         return None

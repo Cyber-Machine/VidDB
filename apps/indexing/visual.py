@@ -3,7 +3,11 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
-from apps.indexing.common import cosine_score, text_embedding
+from apps.indexing.embeddings import (
+    EmbeddingProvider,
+    cosine_similarity,
+    default_embedding_provider,
+)
 from apps.persistence.models import Index, ProcessingState, TemporalRecord
 from apps.persistence.repositories import (
     IndexRepository,
@@ -59,14 +63,29 @@ def build_visual_index(
     asset_id: str,
     version: str,
     provider: VisualModelProvider,
+    embedding_provider: EmbeddingProvider | None = None,
 ) -> Index:
     asset = MediaAssetRepository(session, tenant_id).get(asset_id)
     if asset is None:
         raise ValueError("asset not found")
-    index = _ensure_index(session, tenant_id, "visual", version, "vision")
+    semantic_embeddings = embedding_provider or default_embedding_provider()
+    index = _ensure_index(
+        session,
+        tenant_id,
+        "visual",
+        version,
+        "vision",
+        semantic_embeddings.model_id,
+    )
     records = TemporalRecordRepository(session, tenant_id)
-    if records.list_for_asset_and_index(asset_id, index.id):
+    existing_records = records.list_for_asset_and_index(asset_id, index.id)
+    if existing_records and all(
+        record.payload.get("embedding_model") == semantic_embeddings.model_id
+        for record in existing_records
+    ):
         return index
+    for record in existing_records:
+        session.delete(record)
     try:
         shots = extract_shots(session, tenant_id, asset_id)
         for shot, frame in zip(shots, representative_frames(asset_id, shots)):
@@ -79,7 +98,8 @@ def build_visual_index(
                     end_ms=shot.end_ms,
                     payload={
                         "description": description,
-                        "embedding": text_embedding(description),
+                        "embedding": semantic_embeddings.embed_document(description),
+                        "embedding_model": semantic_embeddings.model_id,
                         "source_frame_uri": frame.uri,
                     },
                 )
@@ -97,8 +117,10 @@ def visual_vector_search(
     tenant_id: str,
     index_id: str,
     query: str,
+    embedding_provider: EmbeddingProvider | None = None,
 ) -> list[dict[str, object]]:
-    query_embedding = text_embedding(query)
+    semantic_embeddings = embedding_provider or default_embedding_provider()
+    query_embedding = semantic_embeddings.embed_query(query)
     records = TemporalRecordRepository(session, tenant_id).list_for_index(index_id)
     return sorted(
         [
@@ -107,9 +129,13 @@ def visual_vector_search(
                 "end_ms": record.end_ms,
                 "source_frame_uri": record.payload["source_frame_uri"],
                 "evidence": record.payload["description"],
-                "score": cosine_score(query_embedding, record.payload["embedding"]),
+                "score": cosine_similarity(
+                    query_embedding,
+                    record.payload["embedding"],
+                ),
             }
             for record in records
+            if record.payload.get("embedding_model") == semantic_embeddings.model_id
         ],
         key=lambda result: result["score"],
         reverse=True,
@@ -122,16 +148,24 @@ def _ensure_index(
     name: str,
     version: str,
     modality: str,
+    embedding_model: str,
 ) -> Index:
     indexes = IndexRepository(session, tenant_id)
     existing = indexes.get_by_name_and_version(name, version)
     if existing is not None:
+        existing.metadata_ = {
+            **existing.metadata_,
+            "embedding_model": embedding_model,
+        }
         return existing
     return indexes.add(
         Index(
             name=name,
             version=version,
             modality=modality,
-            metadata_={"version": version},
+            metadata_={
+                "version": version,
+                "embedding_model": embedding_model,
+            },
         )
     )

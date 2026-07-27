@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A multimodal, time-indexed database for continuous media."
 requires-python = ">=3.12"
 dependencies = [
+    "fastembed>=0.8.0,<0.9",
     "fastapi>=0.115.0",
     "psycopg[binary]>=3.2.0",
     "sqlalchemy>=2.0.0",
