@@ -72,4 +72,4 @@ uv run pytest -q
 node --test frontend/smoke_test.mjs
 ```
 
-The main packages live under `apps/`: API routes, persistence, ingestion, media workflows, indexing, search, clips, live streams, events, and temporal queries. See [`TODO.md`](TODO.md) for current integration work.
+The main packages live under `apps/`: API routes, persistence, ingestion, media workflows, indexing, search, clips, live streams, events, and temporal queries.

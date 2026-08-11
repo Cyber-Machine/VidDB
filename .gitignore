@@ -6,3 +6,5 @@ explaination.html
 explanation.html
 __pycache__/
 *.py[cod]
+/plan.md
+/TODO.md
