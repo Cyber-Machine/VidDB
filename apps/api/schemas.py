@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CollectionCreateRequest(BaseModel):
@@ -44,13 +44,27 @@ class UploadCompletionRequest(BaseModel):
     object_uri: str
 
 
+class EpisodeIndexRequest(BaseModel):
+    source_index_id: str = Field(min_length=1)
+    version: str = Field(min_length=1)
+    max_gap_ms: int = Field(default=5_000, ge=0, le=3_600_000)
+    min_similarity: float = Field(default=0.65, ge=-1.0, le=1.0)
+
+
+class EpisodeIndexResponse(BaseModel):
+    id: str
+    version: str
+    source_index_id: str
+    episode_count: int
+
+
 class SearchRequest(BaseModel):
     query: str
     collection_ids: list[str] | None = None
     asset_ids: list[str] | None = None
     start_ms: int | None = None
     end_ms: int | None = None
-    modalities: list[Literal["transcript", "visual"]] | None = None
+    modalities: list[Literal["transcript", "visual", "episode"]] | None = None
     index_versions: list[str] | None = None
     vector_weight: float = 0.7
     full_text_weight: float = 0.3

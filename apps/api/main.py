@@ -17,6 +17,8 @@ from apps.api.schemas import (
     CollectionCreateRequest,
     CollectionResponse,
     DeletionStatusResponse,
+    EpisodeIndexRequest,
+    EpisodeIndexResponse,
     MetricsResponse,
     MultipartUploadRequest,
     MultipartUploadResponse,
@@ -27,6 +29,7 @@ from apps.api.schemas import (
 from apps.clips import create_virtual_clip, render_clip_manifest, signed_playback_url
 from apps.deletion import asset_deletion_status, delete_asset
 from apps.hardening import metrics_snapshot
+from apps.indexing.episodes import build_episode_index
 from apps.ingestion import (
     create_asset,
     create_collection,
@@ -35,6 +38,7 @@ from apps.ingestion import (
     list_collections,
 )
 from apps.persistence.models import MediaAsset
+from apps.persistence.repositories import TemporalRecordRepository
 from apps.search import hybrid_search
 from apps.ui import dashboard_html
 
@@ -202,6 +206,44 @@ async def search_endpoint(
             cursor=request.cursor,
             limit=request.limit,
         )
+    )
+
+
+@app.post(
+    "/assets/{asset_id}/episodes",
+    response_model=EpisodeIndexResponse,
+    status_code=201,
+)
+async def build_episode_index_endpoint(
+    asset_id: str,
+    request: EpisodeIndexRequest,
+    session: Session = Depends(get_session),
+    tenant_id: str = Header(alias="X-Tenant-ID"),
+) -> EpisodeIndexResponse:
+    try:
+        index = build_episode_index(
+            session,
+            tenant_id,
+            asset_id,
+            request.source_index_id,
+            request.version,
+            max_gap_ms=request.max_gap_ms,
+            min_similarity=request.min_similarity,
+        )
+    except ValueError as error:
+        message = str(error)
+        status_code = 404 if message.endswith("not found") else 400
+        raise HTTPException(status_code=status_code, detail=message) from error
+    episode_count = len(
+        TemporalRecordRepository(session, tenant_id).list_for_asset_and_index(
+            asset_id, index.id
+        )
+    )
+    return EpisodeIndexResponse(
+        id=index.id,
+        version=index.version,
+        source_index_id=request.source_index_id,
+        episode_count=episode_count,
     )
 
 

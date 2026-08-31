@@ -8,6 +8,7 @@ The project is an early-stage reference implementation built around FastAPI, Pos
 
 - Registers uploaded files, object-store assets, and URLs
 - Builds versioned transcript, visual, and custom indexes
+- Detects coherent episodes from temporal gaps and semantic embedding changes
 - Combines vector and full-text search across temporal evidence
 - Filters results by tenant, collection, asset, time range, modality, and index version
 - Creates virtual clips and HLS manifests without copying source media
@@ -49,6 +50,16 @@ curl -X POST http://localhost:8000/collections \
   -H 'Content-Type: application/json' \
   -H 'X-Tenant-ID: demo' \
   -d '{"name":"Highlights"}'
+```
+
+Build a searchable episode-memory index from an existing transcript or visual
+index. Reuse the version only with the same immutable segmentation settings:
+
+```bash
+curl -X POST http://localhost:8000/assets/ASSET_ID/episodes \
+  -H 'Content-Type: application/json' \
+  -H 'X-Tenant-ID: demo' \
+  -d '{"source_index_id":"INDEX_ID","version":"transcript-v1"}'
 ```
 
 Set `VIDEODB_API_KEY` to require an additional `X-API-Key` header. The default database connection can be overridden with `VIDEODB_DATABASE_URL`.

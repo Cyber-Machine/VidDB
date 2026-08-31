@@ -319,4 +319,5 @@ def _unique_strings(values: list[str]) -> list[str]:
 
 def _ordered_modalities(values: list[str]) -> list[str]:
     unique = _unique_strings(values)
-    return sorted(unique, key=lambda value: ["transcript", "visual"].index(value))
+    order = {"transcript": 0, "visual": 1, "episode": 2}
+    return sorted(unique, key=lambda value: (order.get(value, len(order)), value))
